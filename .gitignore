@@ -131,5 +131,5 @@ dmypy.json
 .vscode/
 
 # Large/Unnecessary files
-.data/
-.logs/
+data/
+logs/
