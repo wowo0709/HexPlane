@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from hexplane.model.mlp import General_MLP
 from hexplane.model.sh import eval_sh_bases
 
-
+# density, distance -> transmittance, alpha -> weights
 def raw2alpha(sigma: torch.Tensor, dist: torch.Tensor) -> torch.Tensor:
     alpha = 1.0 - torch.exp(-sigma * dist)
 
@@ -22,7 +22,7 @@ def raw2alpha(sigma: torch.Tensor, dist: torch.Tensor) -> torch.Tensor:
     weights = alpha * T[:, :-1]  # [N_rays, N_samples]
     return alpha, weights, T[:, -1:]
 
-
+# Calculate rgb value from spherial harmonic coefficients and view direction
 def SHRender(
     xyz_sampled: torch.Tensor,
     viewdirs: torch.Tensor,
@@ -34,7 +34,7 @@ def SHRender(
     rgb = torch.relu(torch.sum(sh_mult * rgb_sh, dim=-1) + 0.5)
     return rgb
 
-
+# return rgb
 def RGBRender(
     xyz_sampled: torch.Tensor,
     viewdirs: torch.Tensor,
@@ -44,7 +44,7 @@ def RGBRender(
     rgb = features
     return rgb
 
-
+# return density
 def DensityRender(
     xyz_sampled: torch.Tensor,
     viewdirs: torch.Tensor,
@@ -84,23 +84,23 @@ class HexPlane_Base(torch.nn.Module):
 
     def __init__(
         self,
-        aabb: torch.Tensor,
-        gridSize: List[int],
-        device: torch.device,
-        time_grid: int,
-        near_far: List[float],
-        density_n_comp: Union[int, List[int]] = 8,
-        app_n_comp: Union[int, List[int]] = 24,
-        density_dim: int = 1,
-        app_dim: int = 27,
-        DensityMode: str = "plain",
-        AppMode: str = "general_MLP",
-        emptyMask: Optional[EmptyGridMask] = None,
-        fusion_one: str = "multiply",
-        fusion_two: str = "concat",
-        fea2denseAct: str = "softplus",
-        init_scale: float = 0.1,
-        init_shift: float = 0.0,
+        aabb: torch.Tensor,     # scene size (NDC)
+        gridSize: List[int],    # grid size (voxel)
+        device: torch.device,   # device
+        time_grid: int,         # time grid
+        near_far: List[float],  # near/far plane
+        density_n_comp: Union[int, List[int]] = 8,  # density hexplane R1=R2=R3
+        app_n_comp: Union[int, List[int]] = 24,     # appearance hexplane R1=R2=R3
+        density_dim: int = 1,           # density dimension (plain)
+        app_dim: int = 27,              # appearance dimension (general_MLP)
+        DensityMode: str = "plain",     # density mode ("plain" or "general_MLP")
+        AppMode: str = "general_MLP",   # appearance mode ("plain" or "general_MLP")
+        emptyMask: Optional[EmptyGridMask] = None,  # Empty mask object
+        fusion_one: str = "multiply",   # fusion 1 (Section 3.3)
+        fusion_two: str = "concat",     # fusion 2 (Section 3.3)
+        fea2denseAct: str = "softplus", # feature to density activation function
+        init_scale: float = 0.1,        # HexPlane weights initialization: scale for uniform distribution
+        init_shift: float = 0.0,        # HexPlane weights initialization: shift for uniform distribution
         normalize_type: str = "normal",
         **kwargs,
     ):
@@ -132,7 +132,7 @@ class HexPlane_Base(torch.nn.Module):
         self.fusion_two = fusion_two
 
         # Plane Index
-        self.matMode = [[0, 1], [0, 2], [1, 2]]
+        self.matMode = [[0, 1], [0, 2], [1, 2]] # xy(zt), xz(yt), yz(xt)
         self.vecMode = [2, 1, 0]
 
         # Coordinate normalization type.

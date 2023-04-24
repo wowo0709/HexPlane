@@ -23,9 +23,18 @@ def visualize_depth_numpy(depth, minmax=None, cmap=cv2.COLORMAP_JET):
 
 
 def N_to_reso(n_voxels, bbox, adjusted_grid=True):
+    '''
+    Args:
+        n_voxels: N_voxel_init
+        bbox: aabb
+        adjusted_grid: nonsquare_voxel (True for dnerf dataset)
+    '''
     if adjusted_grid:
+        # scene size
         xyz_min, xyz_max = bbox
+        # root(xyz, 1/3) = unit voxel size
         voxel_size = ((xyz_max - xyz_min).prod() / n_voxels).pow(1 / 3)
+        # voxel length at each axis
         return ((xyz_max - xyz_min) / voxel_size).long().tolist()
     else:
         # grid_each = n_voxels.pow(1 / 3)

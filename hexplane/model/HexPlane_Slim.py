@@ -21,16 +21,19 @@ class HexPlane_Slim(HexPlane_Base):
         """
         Initialize the planes. density_plane is the spatial plane while density_line_time is the spatial-temporal plane.
         """
+        # density hexplane
         self.density_plane, self.density_line_time = self.init_one_hexplane(
             self.density_n_comp, self.gridSize, device
         )
+        # appearance hexplane
         self.app_plane, self.app_line_time = self.init_one_hexplane(
             self.app_n_comp, self.gridSize, device
         )
+        # appearance MLP
         self.app_basis_mat = torch.nn.Linear(
             sum(self.app_n_comp), self.app_dim, bias=False
         ).to(device)
-
+        # density plain
         density_basis_mat = []
         for i in range(len(self.vecMode)):
             density_basis_mat.append(
@@ -41,7 +44,10 @@ class HexPlane_Slim(HexPlane_Base):
     def init_one_hexplane(self, n_component, gridSize, device):
         plane_coef, line_time_coef = [], []
 
-        for i in range(len(self.vecMode)):
+        for i in range(len(self.vecMode)): # 3
+            # from HexPlane_Base
+            # self.matMode = [[0, 1], [0, 2], [1, 2]] # xy(zt), xz(yt), yz(xt)
+            # self.vecMode = [2, 1, 0]
             vec_id = self.vecMode[i]
             mat_id_0, mat_id_1 = self.matMode[i]
 

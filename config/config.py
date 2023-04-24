@@ -22,13 +22,17 @@ class Model_Config:
     time_grid_init: int = 16
     time_grid_final: int = 128
     normalize_type: str = "normal"
+    # upsampling grid resolution step
     upsample_list: List[int] = field(default_factory=lambda: [3000, 6000, 9000])
+    # updating empty grid step
     update_emptymask_list: List[int] = field(
         default_factory=lambda: [4000, 8000, 10000]
     )
 
     # Plane Initialization
+    # density hexplane R1, R2, R3
     density_n_comp: List[int] = field(default_factory=lambda: [24, 24, 24])
+    # appearance hexplane R1, R2, R3
     app_n_comp: List[int] = field(default_factory=lambda: [48, 48, 48])
     density_dim: int = 1
     app_dim: int = 27
@@ -95,7 +99,7 @@ class Data_Config:
     dataset_name: str = "dnerf"  # choose from "dnerf", "neural3D_NDC"
     downsample: float = 1.0
     cal_fine_bbox: bool = False
-    N_vis: int = -1
+    N_vis: int = -1 # evaluate images for every N_vis images
     time_scale: float = 1.0
     scene_bbox_min: List[float] = field(default_factory=lambda: [-1.0, -1.0, -1.0])
     scene_bbox_max: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
@@ -123,8 +127,10 @@ class Data_Config:
 @dataclass
 class Optim_Config:
     # Learning Rate
+    # for feature planes
     lr_density_grid: float = 0.02
     lr_app_grid: float = 0.02
+    # for V^RF and NN
     lr_density_nn: float = 0.001
     lr_app_nn: float = 0.001
 

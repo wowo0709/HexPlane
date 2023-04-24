@@ -77,6 +77,7 @@ def render_test(cfg):
 
 
 def reconstruction(cfg):
+    # Get and process train/test dataset
     if cfg.data.datasampler_type == "rays":
         train_dataset = get_train_dataset(cfg, is_stack=False)
     else:

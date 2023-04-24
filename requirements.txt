@@ -9,3 +9,5 @@ pytorch_msssim==0.2.1
 scipy==1.9.1
 setuptools==67.6.0
 tqdm==4.65.0
+tensorboard==2.12.2
+imageio[ffmpeg]==2.26.0
