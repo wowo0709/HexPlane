@@ -40,6 +40,7 @@ class General_MLP(torch.nn.Module):
     ):
         super().__init__()
 
+        # Calculate input dimension
         self.in_mlpC = inChanel
         self.use_t = t_pe >= 0
         self.use_fea = fea_pe >= 0
@@ -61,6 +62,7 @@ class General_MLP(torch.nn.Module):
         if self.use_view:
             self.in_mlpC += 3 + 2 * view_pe * 3
 
+        
         assert n_layers >= 2  # Assert at least two layers of MLP
         layers = [torch.nn.Linear(self.in_mlpC, featureC), torch.nn.ReLU(inplace=True)]
 
@@ -103,6 +105,9 @@ class General_MLP(torch.nn.Module):
 
         rgb = self.mlp(mlp_in)
         if self.use_sigmoid:
+            # print('mlp_in.shape', mlp_in.shape)
+            # print('self.mlp', self.mlp)
+            # exit()
             rgb = torch.sigmoid(rgb)
 
         return rgb

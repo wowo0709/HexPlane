@@ -266,6 +266,11 @@ class HexPlane(HexPlane_Base):
                 xyz_sampled[..., self.vecMode[2]],
             )
         )
+        # print('line_time_coord.shape', line_time_coord.shape)
+        # print('frame_time.shape', frame_time.shape)
+        # print('frame_time.expand(3, -1, -1)', frame_time.expand(3, -1, -1).shape)
+        # print('frame_time.expand(3, -1, -1).squeeze(-1)', frame_time.expand(3, -1, -1).squeeze(-1).shape)
+        # print('torch.stack((frame_time.expand(3, -1, -1).squeeze(-1), line_time_coord), dim=-1).view(3, -1, 1, 2)', torch.stack((frame_time.expand(3, -1, -1).squeeze(-1), line_time_coord), dim=-1).view(3, -1, 1, 2).shape)
         line_time_coord = (
             torch.stack(
                 (frame_time.expand(3, -1, -1).squeeze(-1), line_time_coord), dim=-1

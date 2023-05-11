@@ -199,7 +199,7 @@ class HexPlane_Base(torch.nn.Module):
         self.random_background = kwargs.get("random_background", False)
         self.depth_loss = kwargs.get("depth_loss", False)
 
-    def init_density_func(
+    def init_density_func( # 필드
         self, DensityMode, t_pe, pos_pe, view_pe, fea_pe, featureC, n_layers, device
     ):
         """
@@ -231,7 +231,7 @@ class HexPlane_Base(torch.nn.Module):
         print("DENSITY REGRESSOR:")
         print(self.density_regressor)
 
-    def init_app_func(
+    def init_app_func( # 필드
         self, AppMode, t_pe, pos_pe, view_pe, fea_pe, featureC, n_layers, device
     ):
         """
@@ -261,7 +261,7 @@ class HexPlane_Base(torch.nn.Module):
         print(self.app_regressor)
         print("pos_pe", pos_pe, "view_pe", view_pe, "fea_pe", fea_pe)
 
-    def update_stepSize(self, gridSize):
+    def update_stepSize(self, gridSize): # 모델
         print("aabb", self.aabb.view(-1))
         print("grid size", gridSize)
         self.aabbSize = self.aabb[1] - self.aabb[0]
@@ -274,26 +274,26 @@ class HexPlane_Base(torch.nn.Module):
         print("sampling step size: ", self.stepSize)
         print("sampling number: ", self.nSamples)
 
-    def init_planes(self, res, device):
+    def init_planes(self, res, device): # 모델
         pass
 
-    def compute_features(self, xyz_sampled):
+    def compute_features(self, xyz_sampled): # 필드
         pass
 
-    def compute_densityfeature(self, xyz_sampled, frame_time):
+    def compute_densityfeature(self, xyz_sampled, frame_time): # 필드
         pass
 
-    def compute_appfeature(self, xyz_sampled, frame_time):
+    def compute_appfeature(self, xyz_sampled, frame_time): # 필드
         pass
 
-    def normalize_coord(self, xyz_sampled):
+    def normalize_coord(self, xyz_sampled): # 필드
         """
         Normalize the sampled coordinates to [-1, 1] range.
         """
         if self.normalize_type == "normal":
             return (xyz_sampled - self.aabb[0]) * self.invaabbSize - 1
 
-    def feature2density(self, density_features: torch.Tensor) -> torch.Tensor:
+    def feature2density(self, density_features: torch.Tensor) -> torch.Tensor: # 필드
         if self.fea2denseAct == "softplus":
             return F.softplus(density_features + self.density_shift)
         elif self.fea2denseAct == "relu":
@@ -301,7 +301,8 @@ class HexPlane_Base(torch.nn.Module):
         else:
             raise NotImplementedError("No such activation function for density feature")
 
-    def sample_rays(
+    # 레이 샘플링 부분은 적당한게 nerfstudio에 없으면 추가해야 함
+    def sample_rays( # 레이 샘플러
         self,
         rays_o: torch.Tensor,
         rays_d: torch.Tensor,
@@ -326,16 +327,20 @@ class HexPlane_Base(torch.nn.Module):
         near, far = self.near_far
         interpx = torch.linspace(near, far, N_samples).unsqueeze(0).to(rays_o)
         if is_train:
+            # ray_sampler -> jitter
             interpx += torch.rand_like(interpx).to(rays_o) * ((far - near) / N_samples)
 
         rays_pts = rays_o[..., None, :] + rays_d[..., None, :] * interpx[..., None]
         mask_outbbox = ((self.aabb[0] > rays_pts) | (rays_pts > self.aabb[1])).any(
             dim=-1
         )
+        # xyz_sampled -> RaySamples.Frustums.get_positions()
+        # z_vals X dists O -> RaySamples.Frustums.deltas
+        # ray_valid -> Automatic
         return rays_pts, interpx, ~mask_outbbox
 
     @torch.no_grad()
-    def filtering_rays(
+    def filtering_rays( # 레이 샘플러
         self,
         all_rays: torch.Tensor,
         all_rgbs: torch.Tensor,
@@ -416,7 +421,7 @@ class HexPlane_Base(torch.nn.Module):
                 None,
             )
 
-    def forward(
+    def forward( # 모델
         self,
         rays_chunk: torch.Tensor,
         frame_time: torch.Tensor,
@@ -450,11 +455,16 @@ class HexPlane_Base(torch.nn.Module):
         dists = torch.cat(
             (z_vals[:, 1:] - z_vals[:, :-1], torch.zeros_like(z_vals[:, :1])), dim=-1
         )
+        # unit vector
         rays_norm = torch.norm(viewdirs, dim=-1, keepdim=True)
         if ndc_ray:
             dists = dists * rays_norm
         viewdirs = viewdirs / rays_norm
 
+        print('xyz_sampled.shape', xyz_sampled.shape)
+
+
+        ### 여기부터. ray_valid 반영 X. 
         viewdirs = viewdirs.view(-1, 1, 3).expand(xyz_sampled.shape)
         frame_time = frame_time.view(-1, 1, 1).expand(
             xyz_sampled.shape[0], xyz_sampled.shape[1], 1
@@ -488,12 +498,19 @@ class HexPlane_Base(torch.nn.Module):
             )
             validsigma = self.feature2density(density_feature)
             sigma[ray_valid] = validsigma.view(-1)
+
         alpha, weight, bg_weight = raw2alpha(
             sigma, dists * self.distance_scale
         )  # alpha is the opacity, weight is the accumulated weight. bg_weight is the accumulated weight for last sampling point.
 
         # Compute appearance feature and rgb if there are valid rays (whose weight are above a threshold).
         app_mask = weight > self.rayMarch_weight_thres
+        # print('app_mask.shape', app_mask.shape)
+        # print('xyz_sampled.shape', xyz_sampled.shape)
+        # print('xyz_sampled[app_mask].shape', xyz_sampled[app_mask].shape)
+        # # print('xyz_sampled[app_mask.expand(*app_mask.shape[:2], 3)].shape', xyz_sampled[app_mask.expand(*app_mask.shape[:2], 3)].shape)
+        # print('frame_time.shape', frame_time.shape)
+        # print('frame_time[app_mask].shape', frame_time[app_mask].shape)
         if app_mask.any():
             app_features = self.compute_appfeature(
                 xyz_sampled[app_mask], frame_time[app_mask]
@@ -527,7 +544,7 @@ class HexPlane_Base(torch.nn.Module):
                 depth_map = depth_map + (1.0 - acc_map) * rays_chunk[..., -1]
         return rgb_map, depth_map, alpha, z_vals
 
-    @torch.no_grad()
+    @torch.no_grad() # 필드
     def updateEmptyMask(self, gridSize=(200, 200, 200), time_grid=64):
         """
         Like TensoRF, we compute the emptiness voxel to store the opacities of the scene and skip computing the opacities of rays with low opacities.
@@ -553,7 +570,7 @@ class HexPlane_Base(torch.nn.Module):
 
         return None
 
-    @torch.no_grad()
+    @torch.no_grad() # 필드
     def getDenseEmpty(self, gridSize=None, time_grid=None):
         """
         For a 4D volume, we sample the opacity values of discrete spacetime points and store them in a 3D volume.
@@ -577,7 +594,7 @@ class HexPlane_Base(torch.nn.Module):
                 dense_xyz[i].view(-1, 3).contiguous(), time_grid, self.stepSize
             ).view((gridSize[1], gridSize[2]))
         return emptiness, dense_xyz
-
+    # 필드
     def compute_emptiness(self, xyz_locs, time_grid=64, length=1):
         """
         Compute the emptiness of spacetime points. Emptiness is the density.

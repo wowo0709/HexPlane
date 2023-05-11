@@ -2,6 +2,7 @@ systems:
   basedir: "./logs"
 
 model:
+  model_name: "HexPlane"
   N_voxel_init: 32768 # Paper: 32^3
 
   # We heuristically set initial time_grid and final time grid. 
@@ -15,6 +16,7 @@ model:
   upsampling_type: unaligned
   upsample_list: [4000, 8000]
   update_emptymask_list: [5000, 10000] # Paper: 4k, 10k
+  nSamples: 1000000
 
 
 data:
