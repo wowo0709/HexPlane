@@ -1,5 +1,6 @@
 systems:
   basedir: "./logs"
+  vis_every: 500
 
 model:
   model_name: "HexPlane"
@@ -23,7 +24,7 @@ data:
   datadir: "./data/lego"
   scene_bbox_min: [-1.5, -1.5, -1.5]
   scene_bbox_max: [1.5, 1.5, 1.5]
-  downsample: 2.5 # assert (img_res / ds) % 16 (macro_block_size) = 0
+  downsample: 2.0 # assert (img_res / ds) % 16 (macro_block_size) = 0
 
 optim:
   n_iters: 25000
