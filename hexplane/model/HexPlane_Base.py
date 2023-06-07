@@ -461,7 +461,7 @@ class HexPlane_Base(torch.nn.Module):
             dists = dists * rays_norm
         viewdirs = viewdirs / rays_norm
 
-        print('xyz_sampled.shape', xyz_sampled.shape)
+        # print('xyz_sampled.shape', xyz_sampled.shape)
 
 
         ### 여기부터. ray_valid 반영 X. 

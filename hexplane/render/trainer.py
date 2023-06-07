@@ -324,6 +324,11 @@ class Trainer:
             # Calculate the loss
             loss = torch.mean((rgb_map - rgb_train) ** 2)
             total_loss = loss
+            summary_writer.add_scalar(
+                    "train/rgb_loss",
+                    loss.detach().item(),
+                    global_step=iteration,
+                )
 
             # Calculate the learning rate decay factor
             lr_factor = self.get_lr_decay_factor(iteration)
